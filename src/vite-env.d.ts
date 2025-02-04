@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
 declare module "virtual:webcontainer-snapshot" {
-  const snapshot: ArrayBuffer;
+  const snapshot: import("@webcontainer/api").FileSystemTree;
   export default snapshot;
 }

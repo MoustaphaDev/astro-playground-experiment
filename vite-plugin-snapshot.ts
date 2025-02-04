@@ -1,50 +1,65 @@
-import type { Plugin } from 'vite'
-import { snapshot } from '@webcontainer/snapshot';
-import { resolve as pathResolve } from 'node:path'
+import { join as pathJoin, resolve as pathResolve } from "node:path";
+import { readdirSync, readFileSync } from "node:fs";
+import type { FileSystemTree } from "@webcontainer/api";
+import type { Plugin } from "vite";
 
-
-const VIRTUAL_MODULE_ID = 'virtual:webcontainer-snapshot'
-const RESOLVED_VIRTUAL_MODULE_ID = '\0' + VIRTUAL_MODULE_ID
+const VIRTUAL_MODULE_ID = "virtual:webcontainer-snapshot";
+const RESOLVED_VIRTUAL_MODULE_ID = "\0" + VIRTUAL_MODULE_ID;
 
 export default function pluginSnapshot(): Plugin {
-  const rootRelativeSnapshotUrl = "./src/webcontainer/filesystem"
-  let snapshotBuffer: Buffer | undefined;
+  const rootRelativeSnapshotUrl = "./src/webcontainer/filesystem";
+  let snapshot: FileSystemTree;
 
   return {
-    name: 'webcontainer-snapshot',
+    name: "webcontainer-snapshot",
     async configResolved(config) {
-      const snapshotUrl = pathResolve(config.root, rootRelativeSnapshotUrl)
-      snapshotBuffer = await snapshot(snapshotUrl)
+      const snapshotUrl = pathResolve(config.root, rootRelativeSnapshotUrl);
+      snapshot = dirToFileSystemTree(snapshotUrl);
 
+      console.log("Snapshot: ", snapshot);
     },
     resolveId(id) {
       if (id === VIRTUAL_MODULE_ID) {
-        return RESOLVED_VIRTUAL_MODULE_ID
+        return RESOLVED_VIRTUAL_MODULE_ID;
       }
     },
     load(id) {
       if (id === RESOLVED_VIRTUAL_MODULE_ID) {
-        const serializedSnapshot = snapshotBuffer!.toString('base64');
         return `\
-${base64ToArrayBuffer.toString()};
-export default base64ToArrayBuffer("${serializedSnapshot}");`
+export default ${JSON.stringify(snapshot)}\
+`;
       }
-    }
-  }
+    },
+  };
 }
 
-function base64ToArrayBuffer(base64String: string) {
-  // 1. Decode base64 to a binary string
-  const binaryString = atob(base64String);
+function dirToFileSystemTree(dirPath: string) {
+  const entries = readdirSync(dirPath, { withFileTypes: true });
+  const tree: FileSystemTree = {};
 
-  // 2. Create a Uint8Array to hold the raw bytes
-  const bytes = new Uint8Array(binaryString.length);
+  entries.forEach((entry) => {
+    // Skip node_modules directories
+    if (
+      entry.isDirectory() &&
+      (entry.name === "node_modules" || entry.name === ".astro")
+    ) {
+      return;
+    }
 
-  // 3. Convert each character to its byte value
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
+    const fullPath = pathJoin(dirPath, entry.name);
 
-  // 4. Return the underlying ArrayBuffer
-  return bytes.buffer;
+    if (entry.isDirectory()) {
+      tree[entry.name] = {
+        directory: dirToFileSystemTree(fullPath),
+      };
+    } else if (entry.isFile()) {
+      tree[entry.name] = {
+        file: {
+          contents: readFileSync(fullPath, "utf-8"),
+        },
+      };
+    }
+  });
+
+  return tree;
 }
