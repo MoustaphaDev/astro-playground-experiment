@@ -1,0 +1,22 @@
+{
+  "name": "filesystem",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "esno ./vite/rendering.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@elysiajs/node": "^1.2.5",
+    "astro": "^5.1.10",
+    "elysia": "^1.2.11",
+    "esno": "^4.8.0",
+    "flru": "^1.0.2",
+    "vite": "^6.0.11"
+  }
+}
