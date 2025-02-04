@@ -3,15 +3,16 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "dev": "esno ./vite/rendering.ts"
+    "dev": "esno ./server.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "~5.6.2"
   },
   "dependencies": {
+    "@elysiajs/cors": "^1.2.0",
     "@elysiajs/node": "^1.2.5",
     "astro": "^5.1.10",
     "elysia": "^1.2.11",

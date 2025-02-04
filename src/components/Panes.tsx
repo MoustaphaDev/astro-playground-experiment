@@ -1,8 +1,16 @@
 import { createResource, onMount } from "solid-js";
 import { code, setCode } from "../state";
 import { mountContainerOnIframe, startDevServer } from "../webcontainer/setup";
+import { treaty } from "@elysiajs/eden";
+import type { App } from "../webcontainer/filesystem/server";
 
-function fetchAstroHTML(code: string) {
+const client = treaty<App>("localhost:8000");
+async function fetchAstroHTML(code: string) {
+  const a = await client.astro_renderer.post({
+    id: "module.astro",
+    content: code,
+  });
+  console.log(a.data);
   return `<h1>Fake Astro HTML</h1>`;
 }
 

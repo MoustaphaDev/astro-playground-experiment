@@ -38,7 +38,7 @@ function dirToFileSystemTree(dirPath: string) {
   const tree: FileSystemTree = {};
 
   entries.forEach((entry) => {
-    // Skip node_modules directories
+    // Skip node_modules and .astro directories
     if (
       entry.isDirectory() &&
       (entry.name === "node_modules" || entry.name === ".astro")

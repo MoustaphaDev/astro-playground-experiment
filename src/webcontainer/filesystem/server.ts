@@ -2,14 +2,16 @@ import { experimental_AstroContainer as AstroContainer } from "astro/container";
 import { addDynamicModule, createViteLoader } from "./vite-loader";
 import { Elysia, t } from "elysia";
 import { node } from "@elysiajs/node";
+import { cors } from "@elysiajs/cors";
 import type { Server } from "elysia/universal";
 
 const viteLoadModule = await createViteLoader();
 
 // don't use node adapter when using bun
 const app = new Elysia({ adapter: process.isBun ? undefined : node() })
-  .post("/astro-renderer", async (request) => {
-    const { id, content } = request.body;
+  .use(cors())
+  .post("/astro_renderer", async ({ body, error }) => {
+    const { id, content } = body;
 
     const resolvedModuleId = addDynamicModule(id, content);
 
@@ -23,10 +25,7 @@ const app = new Elysia({ adapter: process.isBun ? undefined : node() })
       return new Response(html, { headers: { "Content-Type": "text/html" } });
     } catch (e) {
       console.error(e);
-      return new Response(
-        "Internal Server Error. Failed to render Astro module",
-        { status: 500 },
-      );
+      return error(500, "Internal Server Error. Failed to render Astro module");
     }
   }, {
     body: t.Object({
@@ -35,11 +34,13 @@ const app = new Elysia({ adapter: process.isBun ? undefined : node() })
     }),
   });
 
+app.listen({ port: 8000 }, warmupViteLoaderAndEndpoint);
+
 async function warmupViteLoaderAndEndpoint(server: Server) {
   const content = `<h1>Hello World</h1>`;
   const id = "hello-world.astro";
 
-  const url = new URL(`http://${server.url.host}/astro-renderer`);
+  const url = new URL(`http://${server.url.host}/astro_renderer`);
 
   const request = new Request(url, {
     headers: { "Content-Type": "application/json" },
@@ -58,5 +59,6 @@ async function warmupViteLoaderAndEndpoint(server: Server) {
   console.log(`Warmup done in ${warmupMeasurement.duration}ms`);
 }
 
-app.listen({ port: 8000 }, warmupViteLoaderAndEndpoint);
+type App = typeof app;
 
+export { type App };

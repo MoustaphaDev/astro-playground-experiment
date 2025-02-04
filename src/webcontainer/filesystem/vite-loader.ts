@@ -38,6 +38,8 @@ const createViteLoader = async () => {
 // think through caching later
 // using an lru cache may be
 // premature optimization
+// also would not using an async store
+// lead to unexpected results?
 const dynamicModules = flru<string>(1);
 
 /**
