@@ -51,7 +51,11 @@ async function warmupViteLoaderAndEndpoint(server: Server) {
   console.log("Warming up vite loader and endpoint");
 
   performance.mark("start");
-  await app.handle(request);
+  const response = await app.handle(request);
+  if (response.status !== 200) {
+    console.error(await response.text());
+    console.error("Failed to warmup vite loader and endpoint");
+  }
   performance.mark("end");
 
   const warmupMeasurement = performance.measure("warmup", "start", "end");
