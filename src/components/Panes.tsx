@@ -1,14 +1,21 @@
 import { createResource, onMount } from "solid-js";
-import { code, setCode } from "../state"
+import { code, setCode } from "../state";
 import { mountContainerOnIframe, startDevServer } from "../webcontainer/setup";
 
 function fetchAstroHTML(code: string) {
-  return `<h1>Fake Astro HTML</h1>`
+  return `<h1>Fake Astro HTML</h1>`;
 }
 
 const Editor = () => {
-  return (<textarea onInput={(e) => setCode(e.target.value)}>{code()}</textarea>)
-}
+  return (
+    <textarea
+      class="bg-purple-800 outline-none"
+      onInput={(e) => setCode(e.target.value)}
+    >
+      {code()}
+    </textarea>
+  );
+};
 
 const Preview = () => {
   const [astroHTML] = createResource(code, fetchAstroHTML);
@@ -21,8 +28,14 @@ const Preview = () => {
       console.error(e);
       console.error("Failed to start dev server");
     }
-  })
-  return <div><iframe srcdoc={astroHTML()} ref={webContainerIframeRef!} /></div>
-}
+  });
+  return (
+    <iframe
+      class="w-full h-full"
+      srcdoc={astroHTML()}
+      ref={webContainerIframeRef!}
+    />
+  );
+};
 
-export { Editor, Preview }
+export { Editor, Preview };
