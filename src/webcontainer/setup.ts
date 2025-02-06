@@ -25,15 +25,15 @@ async function startDevServer() {
   }
 
   await webcontainerInstance.spawn("pnpm", ["run", "dev"]);
-  console.log("Running dev server");
+  console.info("Running dev server");
 }
 
 function mountContainerOnIframe(iframeEl: HTMLIFrameElement) {
   let url;
-  console.log("Server ready!!");
+  console.info("Server ready!!");
   webcontainerInstance.on("server-ready", (port, _url) => {
     url = _url;
-    console.log(`Server ready at ${_url}`);
+    console.info(`Server ready at ${_url}`);
     iframeEl.src = _url;
   });
 }

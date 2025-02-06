@@ -5,7 +5,7 @@ import { node } from "@elysiajs/node";
 import { cors } from "@elysiajs/cors";
 import type { Server } from "elysia/universal";
 
-const viteLoadModule = await createViteLoader();
+const { viteLoadModule } = await createViteLoader();
 
 // don't use node adapter when using bun
 const app = new Elysia({ adapter: process.isBun ? undefined : node() })
@@ -22,6 +22,11 @@ const app = new Elysia({ adapter: process.isBun ? undefined : node() })
       const html = await astroContainer.renderToString(astroSsrModule.default, {
         partial: false,
       });
+      // find a way to collect script and styles
+      // const script = await viteLoadModule(
+      //   "/@id/virtual:astro-code/module.astro?astro&type=script&index=0&lang.ts",
+      // );
+      // console.log("Script: ", script);
       return new Response(html, { headers: { "Content-Type": "text/html" } });
     } catch (e) {
       console.error(e);
@@ -48,7 +53,7 @@ async function warmupViteLoaderAndEndpoint(server: Server) {
     method: "POST",
   });
 
-  console.log("Warming up vite loader and endpoint");
+  console.info("Warming up vite loader and endpoint");
 
   performance.mark("start");
   const response = await app.handle(request);
@@ -60,7 +65,7 @@ async function warmupViteLoaderAndEndpoint(server: Server) {
 
   const warmupMeasurement = performance.measure("warmup", "start", "end");
 
-  console.log(`Warmup done in ${warmupMeasurement.duration}ms`);
+  console.info(`Warmup done in ${warmupMeasurement.duration}ms`);
 }
 
 type App = typeof app;

@@ -1,18 +1,23 @@
-import { createResource, onMount } from "solid-js";
+import { createResource, onMount, type ResourceFetcher } from "solid-js";
 import { code, setCode } from "../state";
 import { mountContainerOnIframe, startDevServer } from "../webcontainer/setup";
 import { treaty } from "@elysiajs/eden";
 import type { App } from "../webcontainer/filesystem/server";
 
 const client = treaty<App>("localhost:8000");
-async function fetchAstroHTML(code: string) {
-  const a = await client.astro_renderer.post({
-    id: "module.astro",
-    content: code,
-  });
-  console.log(a.data);
-  return `<h1>Fake Astro HTML</h1>`;
-}
+const fetchAstroHTML =
+  (async function (code: string, { value: previousValue }) {
+    const { data, error } = await client.astro_renderer.post({
+      id: "module.astro",
+      content: code,
+    });
+
+    if (!error) {
+      return data ?? "<h1>Loading...</h1>";
+    }
+    return previousValue ?? "<h1>Loading...</h1>";
+    // return `<h1>Fake Astro HTML</h1>`;
+  }) satisfies ResourceFetcher<string, string>;
 
 const Editor = () => {
   return (

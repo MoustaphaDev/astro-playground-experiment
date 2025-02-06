@@ -21,17 +21,30 @@ const createViteLoader = async () => {
     isPreview: false,
   });
   const viteDevServer = await createServer(config);
-  return async function loadSsrModule(url: string) {
-    // gymnastics to ensure that we always
-    // refetch the module and avoid caching
-    // there could be a better way to do this
-    const maybeCachedModule = viteDevServer.moduleGraph.getModuleById(url);
-    return (async () => {
-      if (maybeCachedModule) {
-        await viteDevServer.reloadModule(maybeCachedModule);
-      }
-      return maybeCachedModule?.ssrModule ?? viteDevServer.ssrLoadModule(url);
-    })();
+  // to get around https://github.com/vitejs/vite/issues/3798
+  await viteDevServer.pluginContainer.buildStart({});
+  viteDevServer.reloadModule;
+
+  return {
+    async viteLoadModule(url: string) {
+      // const moduleInfo = viteDevServer.pluginContainer.getModuleInfo(url);
+      // console.log("Module Info: ", moduleInfo);
+
+      // gymnastics to ensure that we always
+      // refetch the module and avoid caching
+      // there could be a better way to do this
+      const maybeCachedModule = viteDevServer.moduleGraph.getModuleById(url);
+      return (async () => {
+        if (maybeCachedModule) {
+          await viteDevServer.reloadModule(maybeCachedModule);
+        }
+        const a = maybeCachedModule?.ssrModule ??
+          viteDevServer.ssrLoadModule(url);
+        // const moduleInfo = viteDevServer.pluginContainer.getModuleInfo(url);
+        // console.log("Module Info: ", moduleInfo);
+        return a;
+      })();
+    },
   };
 };
 
@@ -63,7 +76,7 @@ function virtualAstroCodePlugin(): Plugin {
     load(id) {
       if (isAstroCodeVirtualModule(id)) {
         const moduleContent = dynamicModules.get(id);
-        return moduleContent || "export default {}";
+        return moduleContent ?? "<h1>Loading...</h1>";
       }
     },
   };
