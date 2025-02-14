@@ -1,14 +1,21 @@
 import { WebContainer } from "@webcontainer/api";
 import snapshot from "virtual:webcontainer-snapshot";
 
-// Call only once
 const webcontainerInstance = await WebContainer.boot();
 
 // mount the file system
 await webcontainerInstance.mount(snapshot);
 
-async function startDevServer() {
-  const installProcess = await webcontainerInstance.spawn("pnpm", ["install"]);
+async function installPackages() {
+  if (!webcontainerInstance) {
+    throw new Error("WebContainer instance not found");
+  }
+  const installProcess = await webcontainerInstance.spawn("pnpm", [
+    "install",
+  ]);
+
+  // await installProcess.exit
+
   installProcess.output.pipeTo(
     new WritableStream({
       write(data) {
@@ -23,19 +30,6 @@ async function startDevServer() {
   if (installExitCode !== 0) {
     throw new Error("Unable to run pnpm install");
   }
-
-  await webcontainerInstance.spawn("pnpm", ["run", "dev"]);
-  console.info("Running dev server");
 }
 
-function mountContainerOnIframe(iframeEl: HTMLIFrameElement) {
-  let url;
-  console.info("Server ready!!");
-  webcontainerInstance.on("server-ready", (port, _url) => {
-    url = _url;
-    console.info(`Server ready at ${_url}`);
-    iframeEl.src = _url;
-  });
-}
-
-export { mountContainerOnIframe, startDevServer };
+export { webcontainerInstance, installPackages };

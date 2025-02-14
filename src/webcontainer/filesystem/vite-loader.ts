@@ -23,7 +23,6 @@ const createViteLoader = async () => {
   const viteDevServer = await createServer(config);
   // to get around https://github.com/vitejs/vite/issues/3798
   await viteDevServer.pluginContainer.buildStart({});
-  viteDevServer.reloadModule;
 
   return {
     async viteLoadModule(url: string) {
@@ -53,7 +52,7 @@ const createViteLoader = async () => {
 // premature optimization
 // also would not using an async store
 // lead to unexpected results?
-const dynamicModules = flru<string>(1);
+const dynamicModules = flru<string>(10);
 
 /**
  * @returns An object containing the resolved module ID of the dynamic module

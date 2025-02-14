@@ -1,5 +1,5 @@
 import "./App.css";
-import { Editor, Preview } from "./components/Panes";
+import { Editor, Preview } from "./components/Panes.tsx";
 
 function App() {
   return (

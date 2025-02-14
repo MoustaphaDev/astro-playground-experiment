@@ -1,19 +1,19 @@
-import { createResource, onMount, type ResourceFetcher } from "solid-js";
+import { createResource, type ResourceFetcher } from "solid-js";
 import { code, setCode } from "../state";
-import { mountContainerOnIframe, startDevServer } from "../webcontainer/setup";
-import { treaty } from "@elysiajs/eden";
-import type { App } from "../webcontainer/filesystem/server";
+import { client } from "~/app/client";
 
-const client = treaty<App>("localhost:8000");
 const fetchAstroHTML =
   (async function (code: string, { value: previousValue }) {
-    const { data, error } = await client.astro_renderer.post({
+    if (!client) {
+      return "<h1>Loading...</h1>";
+    }
+    const { html, error } = await client.postMessage({
       id: "module.astro",
       content: code,
     });
 
     if (!error) {
-      return data ?? "<h1>Loading...</h1>";
+      return html ?? "<h1>Loading...</h1>";
     }
     return previousValue ?? "<h1>Loading...</h1>";
     // return `<h1>Fake Astro HTML</h1>`;
@@ -32,17 +32,9 @@ const Editor = () => {
 
 const Preview = () => {
   const [astroHTML] = createResource(code, fetchAstroHTML);
-  let webContainerIframeRef: HTMLIFrameElement | null;
-  onMount(async () => {
-    try {
-      await startDevServer();
-      mountContainerOnIframe(webContainerIframeRef!);
-    } catch (e) {
-      console.error(e);
-      console.error("Failed to start dev server");
-    }
-  });
+  let webContainerIframeRef: HTMLIFrameElement | undefined;
   return (
+    // TODO: doesn't need to be an iframe i think
     <iframe
       class="w-full h-full"
       srcdoc={astroHTML()}

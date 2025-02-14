@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-    "target": "ES2020",
+    "target": "ESNext",
     "useDefineForClassFields": true,
     "module": "ESNext",
     "customConditions": [
       "browser"
     ],
     "lib": [
-      "ES2020",
+      "ESNext",
       "DOM",
       "DOM.Iterable"
     ],
@@ -31,10 +31,13 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "~/bridge": [
+        "./src/webcontainer/filesystem/client-server-bridge.ts"
       ]
     }
   },
   "include": [
-    "src"
+    "src",
   ]
 }

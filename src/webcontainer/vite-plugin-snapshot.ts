@@ -15,8 +15,6 @@ export default function pluginSnapshot(): Plugin {
     async configResolved(config) {
       const snapshotUrl = pathResolve(config.root, rootRelativeSnapshotUrl);
       snapshot = dirToFileSystemTree(snapshotUrl);
-
-      // console.log("Snapshot: ", snapshot);
     },
     resolveId(id) {
       if (id === VIRTUAL_MODULE_ID) {
