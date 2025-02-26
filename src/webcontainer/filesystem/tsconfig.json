@@ -26,7 +26,7 @@
     "baseUrl": ".",
     "paths": {
       "~/bridge": [
-        "./client-server-bridge.ts"
+        "src/client-server-bridge.ts"
       ]
     }
   }

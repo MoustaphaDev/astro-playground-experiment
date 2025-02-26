@@ -1,8 +1,9 @@
 import { createResource, type ResourceFetcher } from "solid-js";
 import { code, setCode } from "../state";
-import { client } from "~/app/client";
+import { client } from "~/webcontainer/client";
+import pDebounce from "p-debounce";
 
-const fetchAstroHTML =
+const fetchAstroHTML = pDebounce.promise(
   (async function (code: string, { value: previousValue }) {
     if (!client) {
       return "<h1>Loading...</h1>";
@@ -16,8 +17,8 @@ const fetchAstroHTML =
       return html ?? "<h1>Loading...</h1>";
     }
     return previousValue ?? "<h1>Loading...</h1>";
-    // return `<h1>Fake Astro HTML</h1>`;
-  }) satisfies ResourceFetcher<string, string>;
+  }) satisfies ResourceFetcher<string, string>,
+);
 
 const Editor = () => {
   return (

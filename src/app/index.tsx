@@ -2,84 +2,87 @@
 import { render } from "solid-js/web";
 import App from "./App";
 import { installPackages, webcontainerInstance } from "~/webcontainer/setup";
-import { startDevServer } from "./setup-webcontainer";
+// import { startDevServer } from "./setup-webcontainer";
+import { readJSONChunks } from "@jsnix/utils/ipc";
+// import { withNewline } from "../webcontainer/utils";
 
-function createEveryOtherAndSkipFirst(fn: (...args: any[]) => void) {
-  const disable = true;
-  if (disable) return fn;
-
-  let count = 0;
-  return function (...args: any[]) {
-    count++;
-    if (count % 2 === 0 && count !== 1) {
-      fn(...args);
-    }
-  };
-}
-
-// When writing to input:
-const streamWriter = createEveryOtherAndSkipFirst(
-  function write(data: any) {
-    // when writing to stdin, it's actually
-    // piped to stdout so what's written gets
-    // displayed in the terminal, i think.
-    // So the actual output stream starts after
-    // the first chunk is received
-    console.log({ data });
-    const response = data.toString() as string;
-    try {
-      const message = JSON.parse(response);
-      if ("message" in message) {
-        console.log({ trueOutput: response });
-      }
-    } catch {}
-  },
-);
-
-async function test() {
+async function getIO() {
   await installPackages();
-  const devProcess = await webcontainerInstance.spawn("pnpm", ["run", "some"], {
-    stderr: true,
+  const relayProcess = await webcontainerInstance.spawn("pnpm", [
+    "run",
+    "jsnix",
+  ], {
+    output: true,
   });
+  const sharedWriter = relayProcess.input.getWriter();
+  const sharedReader = relayProcess.output.getReader();
 
-  const responseStream = new WritableStream({
-    write: streamWriter,
-  });
+  await sharedWriter.ready;
 
-  devProcess.stderr.pipeTo(responseStream);
+  let isProcessReady = false;
 
-  // const readable = new ReadableStream({
-  //   async start(controller) {
-  //     const payload = JSON.stringify({
-  //       id: "file.astro",
-  //       content: "hey there!!!",
-  //     });
-  //     while (true) {
-  //       await new Promise((resolve) => setTimeout(resolve, 1000));
-  //       controller.enqueue(payload);
-  //     }
-  //   },
-  // });
-  //
-  // readable.pipeTo(devProcess.input);
-
-  const writer = devProcess.input.getWriter();
-  let count = 0;
   while (true) {
-    await new Promise((resolve) => setTimeout(resolve, 200));
-    const payload = JSON.stringify({
-      id: "file.astro",
-      content: `hey there!!! - ${count++}`,
-    });
-    writer.write(payload);
-  }
+    const { value, done } = await sharedReader.read();
+    if (done) {
+      throw new Error("Done before process is ready");
+    }
 
-  if (await devProcess.exit !== 0) {
-    throw new Error("Failed to start dev server");
+    // await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      const response = JSON.parse(value.trim());
+      console.log({ response });
+      if (!isProcessReady) {
+        isProcessReady = response.type === "ready";
+        if (isProcessReady) {
+          console.log("Process is ready");
+          console.debug({ msg: "received relay start message", value });
+          return { sharedWriter, sharedReader };
+        }
+      }
+    } catch { }
   }
 }
+
+async function* handleRequest(
+  reader: ReadableStreamDefaultReader<string>,
+  resolversContainer: { resolvers: PromiseWithResolvers<void> },
+) {
+  for await (const json of readJSONChunks(reader)) {
+    if (json?.type === "response") {
+      resolversContainer.resolvers.resolve();
+      yield json;
+    }
+  }
+}
+
+// async function jsnixTest() {
+//   const { sharedWriter, sharedReader } = await getIO();
+//   await sharedWriter.ready;
+//
+//   const resolversContainer = { resolvers: Promise.withResolvers<void>() };
+//
+//   (async function () {
+//     for await (
+//       const response of handleRequest(sharedReader, resolversContainer)
+//     ) {
+//       console.log({ response });
+//     }
+//   })();
+//
+//   while (true) {
+//     sharedWriter.write(withNewline(JSON.stringify({ message: "hello" })));
+//     // TODO: implement request timeout
+//     console.log("Sent message");
+//     // lock until the response is received
+//     const response = await resolversContainer.resolvers.promise;
+//     resolversContainer.resolvers = Promise.withResolvers<void>();
+//     console.log("Received response");
+//     await new Promise((resolve) => setTimeout(resolve, 2000));
+//   }
+// }
 
 // startDevServer();
-test();
+// test();
+// jsnixTest();
 const root = document.getElementById("root");
 render(() => <App />, root!);

@@ -33,8 +33,11 @@
         "./src/*"
       ],
       "~/bridge": [
-        "./src/webcontainer/filesystem/client-server-bridge.ts"
-      ]
+        "src/webcontainer/filesystem/src/client-server-bridge.ts"
+      ],
+      "~/shared": [
+        "./src/shared.ts"
+      ],
     }
   },
   "include": [

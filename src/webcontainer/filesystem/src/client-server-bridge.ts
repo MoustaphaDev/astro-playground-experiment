@@ -1,4 +1,3 @@
-import type { WebContainerProcess } from "@webcontainer/api";
 import { z } from "zod";
 
 const clientMessageSchema = z.object({
@@ -7,10 +6,12 @@ const clientMessageSchema = z.object({
 });
 const serverMessageSchema = z.union([
   z.object({
+    type: z.union([z.literal("ready"), z.literal("response")]),
     html: z.string(),
     error: z.optional(z.never()),
   }),
   z.object({
+    type: z.literal("error"),
     html: z.optional(z.never()),
     error: z.string(),
   }),
@@ -25,14 +26,4 @@ export function parseClientMessage(data: unknown) {
 export function parseServerMessage(data: unknown) {
   // console.log("Server message: ", data);
   return serverMessageSchema.safeParse(data);
-}
-
-export abstract class CommunicationPlatform<
-  T extends NodeJS.Process | WebContainerProcess,
-> {
-  protected process: T;
-  constructor(process: T) {
-    this.process = process;
-  }
-  abstract postMessage(payload: any): void;
 }

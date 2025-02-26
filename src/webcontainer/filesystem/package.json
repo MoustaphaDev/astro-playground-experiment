@@ -3,12 +3,16 @@
   "type": "module",
   "scripts": {
     "dev": "esno ./messaging-process.ts",
-    "some": "esno ./hi.ts"
+    "some": "esno ./hi.ts",
+    "jsnix": "esno ./jsnix-test.ts"
   },
   "peerDependencies": {
     "typescript": "~5.6.2"
   },
   "dependencies": {
+    "@jsnix/relay": "^0.0.36",
+    "@jsnix/utils": "^0.0.59",
+    "@types/bun": "^1.2.3",
     "astro": "^5.1.10",
     "esno": "^4.8.0",
     "flru": "^1.0.2",

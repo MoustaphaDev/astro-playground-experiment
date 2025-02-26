@@ -1,6 +1,6 @@
 import {
   type ClientMessage,
-  CommunicationPlatform,
+  parseClientMessage,
   type ServerMessage,
 } from "~/bridge";
 import { experimental_AstroContainer as AstroContainer } from "astro/container";
@@ -8,23 +8,27 @@ import { addDynamicModule, createViteLoader } from "./vite-loader.ts";
 
 const { viteLoadModule } = await createViteLoader();
 
-class ServerChannel extends CommunicationPlatform<NodeJS.Process> {
-  constructor() {
-    super(process);
+class ServerContainer {
+  static async handleRequest(
+    data: Record<string, string>,
+  ): Promise<ServerMessage> {
+    const { data: payload, error, success } = parseClientMessage(data);
+    if (!success) {
+      return { type: "error", error: error.message };
+    }
+    return ServerContainer.handleClientMessage(payload);
   }
 
-  postMessage(message: ServerMessage) {
-    process.stdin.write(JSON.stringify(message));
-  }
-
-  async handleIncomingMessage(payload: ClientMessage) {
+  private static async handleClientMessage(
+    payload: ClientMessage,
+  ): Promise<ServerMessage> {
     const { id, content } = payload;
 
     const resolvedModuleId = addDynamicModule(id, content);
-    const astroSsrModule = await viteLoadModule(resolvedModuleId);
     const astroContainer = await AstroContainer.create();
 
     try {
+      const astroSsrModule = await viteLoadModule(resolvedModuleId);
       const html = await astroContainer.renderToString(astroSsrModule.default, {
         partial: false,
       });
@@ -33,13 +37,13 @@ class ServerChannel extends CommunicationPlatform<NodeJS.Process> {
       //   "/@id/virtual:astro-code/module.astro?astro&type=script&index=0&lang.ts",
       // );
       // console.log("Script: ", script);
-      return this.postMessage({ html });
+      return { type: "response", html };
     } catch (e) {
-      console.error(e);
-      return this.postMessage({
-        error: "Internal Server Error. Failed to render Astro module",
-      });
+      return {
+        type: "error",
+        error: `Internal Server Error. Failed to render Astro module.\n\n${e}`,
+      };
     }
   }
 }
-export { ServerChannel };
+export { ServerContainer };
